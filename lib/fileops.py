@@ -146,8 +146,10 @@ class DocStore(object):
 
     @contextualize
     def stage_to(self, target, fname):
-        '''NOTE: despite being called "stage_to" this method is simply
-        push, but a bit more workflow oriented'''
+        ''' this is very similar to a push, but ignores the concept of moving around
+        commits, instead it is very file/version oriented. This kind of breaks git,
+        but is workflow-useful for a lot of this stuff'''
+        util.pull_file(self.repo, self.repo.head.ref.name, target, fname)
 
 
     @contextualize
@@ -155,7 +157,8 @@ class DocStore(object):
         pass
 
     @contextualize
-    def revert_file(self, x):
-        pass
-
+    def revert_file(self, fname):
+        ''' this makes a file match what the master branch has,
+        dropping all changes from the "user" branch'''
+        util.pull_file(self.repo, 'master', self.repo.head.ref.name, fname)
 

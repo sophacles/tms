@@ -36,5 +36,5 @@ def pull_file(repo, source, target, fname):
     target.set_commit(c)
     del idx
     #os.unlink('/tmp/gitn')
-    return t
+    return
 
