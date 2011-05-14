@@ -92,6 +92,7 @@ class DocStore(object):
         '''
         self.repo_path = repo_path
         self.file_prefix = file_prefix
+        self.create_dirs = create_dirs
         self.branch = 'master'
         self.set_repo(repo_path)
 
@@ -124,8 +125,6 @@ class DocStore(object):
             else:
                 raise
         self.repo = Repo.init(self.repo_path)
-        for d in ['files/', 'scripts/']:
-            os.makedirs(J(self.repo_path, d))
         fd = open(J(self.repo_path, 'created'), 'w')
         fd.write("Created on %s\n" %(time.ctime(),))
         fd.close()
@@ -140,6 +139,12 @@ class DocStore(object):
             print "got error in set_repo: %s" %(e,)
             self.make_repo()
         files = J(self.repo.working_dir, self.file_prefix)
+
+        for d in self.create_dirs:
+            d = J(self.repo_path, d)
+            if os.path.exists(d) and os.path.isdir(d): continue
+            os.makedirs()
+
         if not os.path.exists(files) and not os.path.isdir(files):
             os.mkdir(files)
 
