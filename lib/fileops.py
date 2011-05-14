@@ -82,7 +82,14 @@ class contextualize(object):
                 (type(obj),))
 
 class DocStore(object):
-    def __init__(self, repo_path="/tmp/foo", file_prefix="files/", create_branches=True):
+    def __init__(self, repo_path="/tmp/foo", file_prefix="/",
+            create_branches=True, create_dirs=[]):
+        '''file_prefix: path rooted in repo_path, which this will operate on. Allows
+                        a sort of 'sandboxing' -- all file op done through this code
+                        are done in that directory.
+
+           create_dirs: a list of directories to create off of repo_path (convenience)
+        '''
         self.repo_path = repo_path
         self.file_prefix = file_prefix
         self.branch = 'master'
@@ -91,12 +98,22 @@ class DocStore(object):
         # internal variables
         self._create_branches = create_branches
 
+    def _getfp(self):
+        return self.__file_prefix
+
+    def _setfp(self, name):
+        self.__file_prefix = name=name.lstrip('/')
+    file_prefix=property(_getfp, _setfp)
+
     # def __getattribute__(self, attr):
     #     a = super(DocStore, self).__getattribute__(attr)
     #     if callable(a) and hasattr(a, 'contextualize'):
     #         return self.__context(a)
     #     else:
     #         return a
+
+    def _fname(self, fname):
+        return J(self.file_prefix, fname)
 
     def make_repo(self):
         try:
@@ -128,8 +145,8 @@ class DocStore(object):
 
 
     @contextualize
-    def get_file(self, name):
-        real_path = J(self.repo.working_dir, self.file_prefix, name)
+    def get_file(self, fname):
+        real_path = J(self.repo.working_dir, self._fname(fname))
         if os.path.exists(real_path) and os.path.isfile(real_path):
             return open(real_path, 'r').read()
         else:
@@ -138,7 +155,7 @@ class DocStore(object):
     @contextualize
     def write_file(self, fname, data):
         r = self.repo
-        f = file(J(r.working_dir, self.file_prefix, fname), 'w')
+        f = file(J(r.working_dir, self._fname(fname)), 'w')
         f.write(data + '\n' + self.branch + "\n")
         f.close()
         r.index.add([f.name])
@@ -149,7 +166,8 @@ class DocStore(object):
         ''' this is very similar to a push, but ignores the concept of moving around
         commits, instead it is very file/version oriented. This kind of breaks git,
         but is workflow-useful for a lot of this stuff'''
-        util.pull_file(self.repo, self.repo.head.ref.name, target, fname)
+        util.pull_file(self.repo, self.repo.head.ref.name, target,
+                       self._fname(fname))
 
 
     @contextualize
@@ -160,5 +178,6 @@ class DocStore(object):
     def revert_file(self, fname):
         ''' this makes a file match what the master branch has,
         dropping all changes from the "user" branch'''
-        util.pull_file(self.repo, 'master', self.repo.head.ref.name, fname)
+        util.pull_file(self.repo, 'master', self.repo.head.ref.name,
+                       self._fname(fname))
 
